@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>西游SBTI人格测试</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft YaHei",sans-serif}
+body{background:#1a1109;color:#f7e8c8;padding:20px}
+.container{max-width:700px;margin:0 auto}
+header{text-align:center;margin:30px 0}
+h1{color:#ffd966;text-shadow:0 0 10px #ff9500}
+.subtitle{color:#f1d49c;margin-top:8px}
+.card{background:rgba(60,35,15,.9);border:2px solid #d4af37;border-radius:16px;padding:30px;margin-bottom:20px}
+.question{font-size:18px;color:#ffd966;margin-bottom:20px}
+.option{background:rgba(90,55,25,.8);border:1px solid #b9925e;border-radius:10px;padding:14px;margin-bottom:12px;cursor:pointer}
+.option:hover{border-color:#ffd966}
+.option.selected{background:#b45309;color:#fff}
+.btn{width:100%;padding:18px;border:none;border-radius:12px;background:linear-gradient(90deg,#e67e22,#d35400);color:#fff;font-size:18px;font-weight:bold;margin-top:20px;cursor:pointer}
+.progress{height:8px;background:#5c3a21;border-radius:4px;margin-bottom:20px}
+.progress-bar{height:100%;background:linear-gradient(90deg,#ffd966,#f59e0b);width:0}
+.result{text-align:center}
+.result-name{font-size:30px;color:#ffd966;margin:20px 0}
+.result-desc{line-height:1.8;text-align:left;margin:20px 0}
+.tags span{display:inline-block;background:#b45309;padding:6px 12px;border-radius:20px;margin:5px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>🐵 西游SBTI人格测试</h1>
+<p class="subtitle">测一测你是西游记中的谁？（娱乐版）</p>
+</header>
+
+<div id="test">
+<div class="progress"><div class="progress-bar" id="bar"></div></div>
+<div class="card">
+<div class="question" id="q"></div>
+<div id="opts"></div>
+</div>
+<button class="btn" id="next">下一题</button>
+</div>
+
+<div id="result" class="hidden">
+<div class="card result">
+<h2>你的西游人格是</h2>
+<div class="result-name" id="rname"></div>
+<div class="tags" id="rtags"></div>
+<div class="result-desc" id="rdesc"></div>
+<button class="btn" id="restart">重新测试</button>
+</div>
+</div>
+</div>
+
+<script>
+// 50种人格特质
+const traits = [
+"勇敢无畏","机智灵活","向往自由","重情重义","领导力强",
+"沉稳可靠","慈悲心软","坚韧不拔","温柔耐心","忠诚专一",
+"通透豁达","低调内敛","嘴硬心软","恩怨分明","爱憎分明",
+"浪漫感性","理性冷静","理想主义","现实主义","幽默风趣",
+"敏感细腻","大大咧咧","外冷内热","心软善良","独立自强",
+"依赖他人","爱面子","洒脱不羁","固执倔强","懂得变通",
+"坚守原则","随性自在","热爱冒险","喜欢安稳","善于观察",
+"心思缜密","直率坦诚","含蓄内敛","保护欲强","需要安全感",
+"善于沟通","喜欢独处","热情外向","冷静内向","治愈温暖",
+"神秘高冷","天真单纯","成熟稳重","好奇心强","佛系随缘"
+];
+
+// 西游角色
+const roles = [
+{name:"孙悟空",tags:["勇敢","机智","自由","强大"],desc:"你像齐天大圣孙悟空，天生傲骨，敢作敢当，不被束缚，重情重义。"},
+{name:"唐僧",tags:["慈悲","坚定","温柔","理想"],desc:"你像唐僧，内心善良，信念坚定，温和有耐心，心怀善意与理想。"},
+{name:"猪八戒",tags:["真实","乐观","随性","可爱"],desc:"你像猪八戒，真实不做作，乐观开朗，享受生活，随性自在。"},
+{name:"沙僧",tags:["忠诚","踏实","稳重","可靠"],desc:"你像沙僧，沉默踏实，任劳任怨，忠诚可靠，默默付出。"},
+{name:"白龙马",tags:["低调","坚韧","守护","温柔"],desc:"你像白龙马，低调内敛，默默守护，温柔坚韧，有担当。"}
+];
+
+// 生成10题
+function makeQuestions(){
+const t = [...traits], qs=[];
+for(let i=0;i<10;i++){
+const o=[];
+for(let j=0;j<4;j++){
+const idx=Math.floor(Math.random()*t.length);
+o.push(t.splice(idx,1)[0]);
+}
+qs.push({q:"以下特质你符合哪些？（可多选）",opts:o});
+}
+return qs;
+}
+
+const questions = makeQuestions();
+let current = 0;
+let score = [0,0,0,0,0];
+
+// 渲染
+function render(){
+const item = questions[current];
+document.getElementById("q").innerText = `${current+1}. ${item.q}`;
+document.getElementById("opts").innerHTML = item.opts.map(v=>`<div class="option">${v}</div>`).join("");
+document.getElementById("bar").style.width = ((current+1)/10*100)+"%";
+document.querySelectorAll(".option").forEach(o=>o.onclick=()=>o.classList.toggle("selected"));
+}
+
+// 计算结果
+function getRes(){
+const s = [0,0,0,0,0];
+document.querySelectorAll(".option.selected").forEach(o=>{
+const t=o.innerText;
+if(/勇敢|机智|自由|强大/.test(t))s[0]++;
+if(/慈悲|坚定|温柔|理想/.test(t))s[1]++;
+if(/真实|乐观|随性|可爱/.test(t))s[2]++;
+if(/忠诚|踏实|稳重|可靠/.test(t))s[3]++;
+if(/低调|坚韧|守护|温柔/.test(t))s[4]++;
+});
+const max = Math.max(...s);
+return s.indexOf(max);
+}
+
+// 下一题
+document.getElementById("next").onclick=()=>{
+if(document.querySelectorAll(".option.selected").length===0)return alert("请至少选一个");
+const idx=getRes();
+score[idx]++;
+current++;
+if(current<10)render();
+else{
+const max=Math.max(...score);
+const rid=score.indexOf(max);
+const r=roles[rid];
+document.getElementById("rname").innerText=r.name;
+document.getElementById("rtags").innerHTML=r.tags.map(t=>`<span>${t}</span>`).join("");
+document.getElementById("rdesc").innerText=r.desc;
+document.getElementById("test").classList.add("hidden");
+document.getElementById("result").classList.remove("hidden");
+}
+}
+
+// 重测
+document.getElementById("restart").onclick=()=>{
+current=0;score=[0,0,0,0,0];
+document.getElementById("test").classList.remove("hidden");
+document.getElementById("result").classList.add("hidden");
+render();
+}
+
+render();
+</script>
+</body>
+</html>
