@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SBTI 人格测试 | 专业版</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    body {
+      background: #12141d;
+      color: #fff;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-size: 32px;
+      background: linear-gradient(90deg, #7e57c2, #46a1ff);
+      -webkit-background-clip: text;
+      color: transparent;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #aaa;
+      font-size: 16px;
+    }
+
+    .card {
+      background: #1e202e;
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    }
+
+    .question {
+      font-size: 18px;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .option {
+      background: #292c3c;
+      padding: 14px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 2px solid transparent;
+    }
+
+    .option:hover {
+      border-color: #7e57c2;
+      background: #252734;
+    }
+
+    .option.active {
+      background: #7e57c2;
+      color: #fff;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      border: none;
+      font-size: 18px;
+      font-weight: bold;
+      background: linear-gradient(90deg, #7e57c2, #46a1ff);
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+      margin-top: 30px;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    .progress {
+      height: 6px;
+      background: #292c3c;
+      border-radius: 3px;
+      margin-bottom: 25px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #7e57c2, #46a1ff);
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    .result-card {
+      text-align: center;
+      padding: 40px 30px;
+    }
+
+    .result-title {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .result-type {
+      font-size: 48px;
+      font-weight: bold;
+      background: linear-gradient(90deg, #7e57c2, #46a1ff);
+      -webkit-background-clip: text;
+      color: transparent;
+      margin: 20px 0;
+    }
+
+    .result-desc {
+      color: #ccc;
+      line-height: 1.8;
+      font-size: 16px;
+      margin-bottom: 30px;
+      text-align: left;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 26px;
+      }
+      .card {
+        padding: 20px;
+      }
+      .question {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>SBTI 人格测试</h1>
+      <p class="subtitle">专业版 | 了解真实的自己</p>
+    </header>
+
+    <!-- 测试区域 -->
+    <div id="test-area">
+      <div class="progress">
+        <div id="progress-bar" class="progress-bar"></div>
+      </div>
+
+      <div class="card">
+        <div id="question" class="question">加载题目中...</div>
+        <div id="options" class="options"></div>
+      </div>
+
+      <button id="next-btn" class="btn">下一题</button>
+    </div>
+
+    <!-- 结果区域 -->
+    <div id="result-area" class="hidden">
+      <div class="card result-card">
+        <h2 class="result-title">你的人格类型是</h2>
+        <div id="result-type" class="result-type">----</div>
+        <div id="result-desc" class="result-desc"></div>
+        <button id="restart-btn" class="btn">重新测试</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // SBTI 测试题目（20题，4维度各5题）
+    const questions = [
+      { id: 1, text: "你更倾向于先行动再思考，还是先思考再行动？", a: "先行动再思考", b: "先思考再行动", type: "E" },
+      { id: 2, text: "聚会时你通常很活跃，还是更愿意安静观察？", a: "很活跃", b: "安静观察", type: "E" },
+      { id: 3, text: "你更容易被新鲜事物吸引，还是专注熟悉的事物？", a: "新鲜事物", b: "熟悉事物", type: "E" },
+      { id: 4, text: "你习惯表达情绪，还是习惯隐藏情绪？", a: "表达情绪", b: "隐藏情绪", type: "E" },
+      { id: 5, text: "你喜欢多交朋友，还是只维持少数深交？", a: "多交朋友", b: "少数深交", type: "E" },
+
+      { id: 6, text: "你更相信经验事实，还是直觉灵感？", a: "经验事实", b: "直觉灵感", type: "S" },
+      { id: 7, text: "你关注细节，还是更关注整体框架？", a: "关注细节", b: "关注整体", type: "S" },
+      { id: 8, text: "你喜欢实际可用的东西，还是创意抽象的概念？", a: "实际可用", b: "创意抽象", type: "S" },
+      { id: 9, text: "你习惯按部就班，还是喜欢突发灵感？", a: "按部就班", b: "突发灵感", type: "S" },
+      { id: 10, text: "你更务实，还是更理想化？", a: "更务实", b: "更理想化", type: "S" },
+
+      { id: 11, text: "做决定时你更看重逻辑，还是感受与关系？", a: "逻辑道理", b: "感受关系", type: "T" },
+      { id: 12, text: "你更擅长批评分析，还是包容理解？", a: "批评分析", b: "包容理解", type: "T" },
+      { id: 13, text: "你认为公正更重要，还是和谐更重要？", a: "公正", b: "和谐", type: "T" },
+      { id: 14, text: "你更容易直言不讳，还是避免冲突？", a: "直言不讳", b: "避免冲突", type: "T" },
+      { id: 15, text: "你更理性冷静，还是感性共情？", a: "理性冷静", b: "感性共情", type: "T" },
+
+      { id: 16, text: "你喜欢计划确定，还是灵活随性？", a: "计划确定", b: "灵活随性", type: "I" },
+      { id: 17, text: "你习惯把事情安排好，还是随遇而安？", a: "安排好", b: "随遇而安", type: "I" },
+      { id: 18, text: " deadline 会让你更高效，还是更焦虑？", a: "更高效", b: "更焦虑", type: "I" },
+      { id: 19, text: "你喜欢事情有结论，还是保持开放？", a: "有结论", b: "保持开放", type: "I" },
+      { id: 20, text: "你是井井有条的人，还是随性自由的人？", a: "井井有条", b: "随性自由", type: "I" },
+    ];
+
+    // 结果解读
+    const resultMap = {
+      ESTJ: { name: "管理型人格", desc: "你务实、理性、有组织力，擅长领导与执行，做事果断，重视规则与效率，是可靠的组织者与决策者。" },
+      ESTP: { name: "挑战型人格", desc: "你灵活、实际、爱冒险，擅长临场反应，喜欢动手实践，讨厌束缚，充满活力，适应力极强。" },
+      ESFJ: { name: "助人型人格", desc: "你温暖、负责、重视人际关系，善于照顾他人，追求和谐，乐于奉献，是团队里的暖心担当。" },
+      ESFP: { name: "表演型人格", desc: "你热情、开朗、热爱生活，喜欢当下的快乐，擅长表达与社交，随性自然，充满感染力。" },
+      ENTJ: { name: "领袖型人格", desc: "你果断、自信、有战略眼光，天生具备领导力，目标感极强，善于规划全局，推动事情达成。" },
+      ENTP: { name: "智多星人格", desc: "你聪明、好奇、创意无限，喜欢思辨与创新，擅长打破常规，解决复杂问题。" },
+      ENFJ: { name: "教育家人格", desc: "你热情、有魅力、善于启发他人，重视成长与理想，能带动他人进步，充满使命感。" },
+      ENFP: { name: "追梦型人格", desc: "你充满创意、理想主义，热情自由，热爱探索可能性，善良且富有想象力。" },
+      ISTJ: { name: "严谨型人格", desc: "你踏实、认真、守规则，注重细节与责任，做事可靠稳定，是值得信赖的实干者。" },
+      ISTP: { name: "工匠型人格", desc: "你冷静、理性、动手能力强，喜欢分析原理，低调务实，擅长解决实际问题。" },
+      ISFJ: { name: "守护型人格", desc: "你温和、细心、有耐心，默默付出，重视安全感与稳定，是最贴心的守护者。" },
+      ISFP: { name: "艺术家人格", desc: "你敏感、温柔、热爱美，内心丰富，追求真实与自由，用行动表达自己的价值观。" },
+      INTJ: { name: "战略家人格", desc: "你独立、智慧、深度思考者，擅长长远规划，追求创新与突破，逻辑性极强。" },
+      INTP: { name: "学者型人格", desc: "你好奇、思辨、追求真理，喜欢思考抽象理论，创造力强，活在自己的思想世界里。" },
+      INFJ: { name: "治愈型人格", desc: "你温柔而坚定，富有洞察力，追求意义与价值，善于理解他人，是理想的倾听者与指引者。" },
+      INFP: { name: "理想家人格", desc: "你纯粹、温柔、内心丰富，追求真善美，重视自我与真诚，充满诗意与信念。" },
+    };
+
+    let current = 0;
+    let score = { E: 0, S: 0, T: 0, I: 0 };
+
+    const qEl = document.getElementById("question");
+    const optEl = document.getElementById("options");
+    const nextBtn = document.getElementById("next-btn");
+    const bar = document.getElementById("progress-bar");
+    const testArea = document.getElementById("test-area");
+    const resultArea = document.getElementById("result-area");
+    const resultType = document.getElementById("result-type");
+    const resultDesc = document.getElementById("result-desc");
+    const restartBtn = document.getElementById("restart-btn");
+
+    // 渲染题目
+    function render() {
+      const q = questions[current];
+      qEl.innerText = `${current + 1}. ${q.text}`;
+      optEl.innerHTML = `
+        <div class="option" data-ans="a">${q.a}</div>
+        <div class="option" data-ans="b">${q.b}</div>
+      `;
+      bar.style.width = `${((current + 1) / questions.length) * 100}%`;
+
+      // 选择
+      document.querySelectorAll(".option").forEach(o => {
+        o.addEventListener("click", () => {
+          document.querySelectorAll(".option").forEach(p => p.classList.remove("active"));
+          o.classList.add("active");
+        });
+      });
+    }
+
+    // 计算结果
+    function getResult() {
+      let e = score.E >= 5 ? "E" : "I";
+      let s = score.S >= 5 ? "S" : "N";
+      let t = score.T >= 5 ? "T" : "F";
+      let i = score.I >= 5 ? "J" : "P";
+      return e + s + t + i;
+    }
+
+    // 下一题
+    nextBtn.addEventListener("click", () => {
+      const active = document.querySelector(".option.active");
+      if (!active) return alert("请选择一个选项");
+
+      // 计分
+      const ans = active.dataset.ans;
+      const type = questions[current].type;
+      if (ans === "a") score[type]++;
+
+      current++;
+      if (current < questions.length) {
+        render();
+      } else {
+        // 显示结果
+        const code = getResult();
+        const res = resultMap[code] || { name: "未知类型", desc: "完成测试，发现独特的你！" };
+        resultType.innerText = code;
+        resultDesc.innerHTML = `<strong>${res.name}</strong><br><br>${res.desc}`;
+        testArea.classList.add("hidden");
+        resultArea.classList.remove("hidden");
+      }
+    });
+
+    // 重新测试
+    restartBtn.addEventListener("click", () => {
+      current = 0;
+      score = { E: 0, S: 0, T: 0, I: 0 };
+      resultArea.classList.add("hidden");
+      testArea.classList.remove("hidden");
+      render();
+    });
+
+    // 开始
+    render();
+  </script>
+</body>
+</html>
